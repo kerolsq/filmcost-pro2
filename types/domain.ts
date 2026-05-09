@@ -133,4 +133,8 @@ export interface CalculatorResult {
   wasteCostPerKg: number;
   rawKgForOneKg: number;
   yield: FilmYield | null;
+  // 🆕 الحقول الجديدة
+  aRatio: number;
+  bRatio: number;
+  expectedRollWeight: number;
 }
