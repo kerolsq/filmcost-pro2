@@ -56,9 +56,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!ready) return;
     document.documentElement.lang = state.language;
     document.documentElement.dir = directionFor(state.language);
-  }, [state.language]);
+  }, [ready, state.language]);
 
   useEffect(() => {
     if (ready) {

@@ -21,6 +21,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { t } = useApp();
 
+  if (pathname === "/" || pathname === "/onboarding") {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-panel text-ink">
       <aside className="app-sidebar fixed inset-y-0 hidden w-64 border-r border-line bg-white px-4 py-5 md:block">
