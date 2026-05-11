@@ -21,7 +21,7 @@ interface OnboardingMaterial {
 
 interface RecipeIngredient {
   materialId: string;
-  percentage: string;
+  amountKg: string;
 }
 
 interface OnboardingRecipe {
@@ -67,12 +67,12 @@ export default function OnboardingPage() {
 
   const [recipeA, setRecipeA] = useState<OnboardingRecipe>({
     name: "خلطة A",
-    ingredients: [{ materialId: "", percentage: "" }],
+    ingredients: [{ materialId: "", amountKg: "" }],
   });
 
   const [recipeB, setRecipeB] = useState<OnboardingRecipe>({
     name: "خلطة B",
-    ingredients: [{ materialId: "", percentage: "" }],
+    ingredients: [{ materialId: "", amountKg: "" }],
   });
 
   const [settings, setSettings] = useState({ defaultWaste: "1", currency: "جنيه مصري" });
@@ -96,29 +96,12 @@ export default function OnboardingPage() {
   const validMaterials = materials.filter((m) => m.name.trim() && m.pricePerKg);
   const canProceedStep2 = validMaterials.length >= 2;
 
-  function recipeTotal(recipe: OnboardingRecipe) {
-    return recipe.ingredients.reduce((sum, ing) => sum + (parseFloat(ing.percentage) || 0), 0);
-  }
-
-  function updateRecipeIngredient(
-    recipe: OnboardingRecipe,
-    setRecipe: (r: OnboardingRecipe) => void,
-    index: number,
-    field: keyof RecipeIngredient,
-    value: string
-  ) {
-    const updated = [...recipe.ingredients];
-    updated[index] = { ...updated[index], [field]: value };
-    setRecipe({ ...recipe, ingredients: updated });
-  }
-
-  function addIngredient(recipe: OnboardingRecipe, setRecipe: (r: OnboardingRecipe) => void) {
-    setRecipe({ ...recipe, ingredients: [...recipe.ingredients, { materialId: "", percentage: "" }] });
-  }
-
-  function removeIngredient(recipe: OnboardingRecipe, setRecipe: (r: OnboardingRecipe) => void, index: number) {
-    if (recipe.ingredients.length <= 1) return;
-    setRecipe({ ...recipe, ingredients: recipe.ingredients.filter((_, i) => i !== index) });
+  function calcPercentages(ingredients: RecipeIngredient[]) {
+    const totalKg = ingredients.reduce((sum, ing) => sum + (parseFloat(ing.amountKg) || 0), 0);
+    return ingredients.map((ing) => {
+      const kg = parseFloat(ing.amountKg) || 0;
+      return totalKg > 0 ? (kg / totalKg) * 100 : 0;
+    });
   }
 
   function RecipeStep({
@@ -130,8 +113,27 @@ export default function OnboardingPage() {
     setRecipe: (r: OnboardingRecipe) => void;
     subtitle: string;
   }) {
-    const total = recipeTotal(recipe);
-    const isValid = Math.abs(total - 100) < 0.01 && recipe.ingredients.every((i) => i.materialId);
+    const percentages = calcPercentages(recipe.ingredients);
+    const totalKg = recipe.ingredients.reduce((sum, ing) => sum + (parseFloat(ing.amountKg) || 0), 0);
+    const isValid =
+      totalKg > 0 &&
+      recipe.ingredients.every((ing) => ing.materialId && parseFloat(ing.amountKg) > 0);
+
+    function setIngredient(index: number, field: keyof RecipeIngredient, value: string) {
+      const updated = recipe.ingredients.map((ing, i) =>
+        i === index ? { ...ing, [field]: value } : ing
+      );
+      setRecipe({ ...recipe, ingredients: updated });
+    }
+
+    function addIngredient() {
+      setRecipe({ ...recipe, ingredients: [...recipe.ingredients, { materialId: "", amountKg: "" }] });
+    }
+
+    function removeIngredient(index: number) {
+      if (recipe.ingredients.length <= 1) return;
+      setRecipe({ ...recipe, ingredients: recipe.ingredients.filter((_, i) => i !== index) });
+    }
 
     return (
       <div className="flex flex-col gap-3">
@@ -142,66 +144,83 @@ export default function OnboardingPage() {
           onChange={(v) => setRecipe({ ...recipe, name: v })}
           type="text"
         />
+
         <div className="space-y-2">
           {recipe.ingredients.map((ing, i) => (
-            <div key={i} className="flex gap-2 items-end">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">الخامة</label>
+            <div key={i} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
                 <select
-                  className="w-full h-[44px] border border-gray-200 rounded-xl px-3 bg-white text-sm"
+                  className="flex-1 h-[42px] border border-gray-200 rounded-lg px-3 bg-white text-sm"
                   value={ing.materialId}
-                  onChange={(e) => updateRecipeIngredient(recipe, setRecipe, i, "materialId", e.target.value)}
+                  onChange={(e) => setIngredient(i, "materialId", e.target.value)}
                 >
                   <option value="">اختر خامة</option>
                   {validMaterials.map((m) => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>
+                <button
+                  onClick={() => removeIngredient(i)}
+                  className="h-[42px] w-[42px] flex items-center justify-center text-gray-300 hover:text-danger rounded-lg flex-shrink-0"
+                >
+                  <IconTrash size={17} />
+                </button>
               </div>
-              <div className="w-24">
-                <label className="block text-xs text-gray-500 mb-1">النسبة %</label>
-                <input
-                  type="number"
-                  value={ing.percentage}
-                  onChange={(e) => updateRecipeIngredient(recipe, setRecipe, i, "percentage", e.target.value)}
-                  className="w-full h-[44px] border border-gray-200 rounded-xl px-3 text-sm text-center"
-                  placeholder="0"
-                />
+
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-400 mb-1">الكمية</label>
+                  <div className="flex items-center border border-gray-200 rounded-lg h-[42px] overflow-hidden">
+                    <input
+                      type="number"
+                      value={ing.amountKg}
+                      onChange={(e) => setIngredient(i, "amountKg", e.target.value)}
+                      className="flex-1 px-3 text-base font-medium text-gray-900 outline-none bg-white h-full"
+                      placeholder="0"
+                      min="0"
+                    />
+                    <span className="px-2 text-xs text-gray-400 bg-gray-50 h-full flex items-center border-r border-gray-200">
+                      كجم
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-[72px] text-center">
+                  <label className="block text-xs text-gray-400 mb-1">النسبة</label>
+                  <div
+                    className={`h-[42px] rounded-lg flex items-center justify-center text-sm font-bold ${
+                      percentages[i] > 0
+                        ? "bg-primary-light text-primary"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {percentages[i] > 0 ? `${percentages[i].toFixed(1)}%` : "—"}
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => removeIngredient(recipe, setRecipe, i)}
-                className="h-[44px] px-2 text-gray-400 hover:text-danger"
-              >
-                <IconTrash size={18} />
-              </button>
             </div>
           ))}
         </div>
+
         <button
-          onClick={() => addIngredient(recipe, setRecipe)}
-          className="flex items-center gap-2 text-primary text-sm font-medium py-2"
+          onClick={addIngredient}
+          className="flex items-center gap-2 text-primary text-sm font-medium py-2 justify-center border-2 border-dashed border-primary-light rounded-xl"
         >
           <IconPlus size={16} /> أضف خامة
         </button>
-        <div
-          className={`flex justify-between items-center p-3 rounded-xl text-sm font-medium ${
-            Math.abs(total - 100) < 0.01
-              ? "bg-primary-light text-primary"
-              : total > 100
-              ? "bg-red-50 text-danger"
-              : "bg-gray-100 text-gray-600"
-          }`}
-        >
-          <span>المجموع الكلي</span>
-          <span>{total.toFixed(1)}%</span>
+
+        <div className={`flex justify-between items-center p-3 rounded-xl text-sm font-medium ${
+          isValid ? "bg-primary-light text-primary" : "bg-gray-100 text-gray-500"
+        }`}>
+          <span>الإجمالي</span>
+          <span>{totalKg > 0 ? `${totalKg.toFixed(2)} كجم — 100%` : "—"}</span>
         </div>
-        {!isValid && (
-          <p className="text-xs text-gray-400 text-center">المجموع لازم يساوي 100% وكل الخامات لازم تتحدد</p>
+
+        {!isValid && totalKg > 0 && (
+          <p className="text-xs text-gray-400 text-center">اختر خامة لكل صف وأدخل كمية أكبر من صفر</p>
         )}
-        <PrimaryButton
-          onClick={() => setStep((s) => s + 1)}
-          disabled={!isValid}
-        >
+
+        <PrimaryButton onClick={() => setStep((s) => s + 1)} disabled={!isValid}>
           التالي
         </PrimaryButton>
       </div>
@@ -220,25 +239,18 @@ export default function OnboardingPage() {
       category: "Other",
     }));
 
+    function toLines(ingredients: RecipeIngredient[]) {
+      const valid = ingredients.filter((i) => i.materialId && parseFloat(i.amountKg) > 0);
+      const totalKg = valid.reduce((sum, i) => sum + parseFloat(i.amountKg), 0);
+      return valid.map((i) => ({
+        materialId: i.materialId,
+        percentage: totalKg > 0 ? (parseFloat(i.amountKg) / totalKg) * 100 : 0,
+      }));
+    }
+
     const savedRecipes = [
-      {
-        id: "recipe-a",
-        name: recipeA.name,
-        type: "A",
-        extruder: "A",
-        lines: recipeA.ingredients
-          .filter((i) => i.materialId)
-          .map((i) => ({ materialId: i.materialId, percentage: parseFloat(i.percentage) || 0 })),
-      },
-      {
-        id: "recipe-b",
-        name: recipeB.name,
-        type: "B",
-        extruder: "B",
-        lines: recipeB.ingredients
-          .filter((i) => i.materialId)
-          .map((i) => ({ materialId: i.materialId, percentage: parseFloat(i.percentage) || 0 })),
-      },
+      { id: "recipe-a", name: recipeA.name, type: "A", extruder: "A", lines: toLines(recipeA.ingredients) },
+      { id: "recipe-b", name: recipeB.name, type: "B", extruder: "B", lines: toLines(recipeB.ingredients) },
     ];
 
     localStorage.setItem("filmcost_materials", JSON.stringify(savedMaterials));
