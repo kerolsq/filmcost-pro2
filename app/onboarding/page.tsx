@@ -10,7 +10,6 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { SecondaryButton } from "@/components/ui/SecondaryButton";
 import { InputField } from "@/components/ui/InputField";
 
 interface OnboardingMaterial {
@@ -249,6 +248,7 @@ export default function OnboardingPage() {
       currency: settings.currency,
     }));
     localStorage.setItem("filmcost_onboarding_done", "true");
+    localStorage.setItem("filmcost-pro-language", "ar");
 
     router.push("/");
   }
