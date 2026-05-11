@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { IconCalculator, IconFlask, IconPackage, IconHistory, IconSettings, IconX } from "@tabler/icons-react";
+import { IconCalculator, IconFlask, IconPackage, IconHistory, IconSettings, IconX, IconTool } from "@tabler/icons-react";
 
 interface SideMenuProps {
   isOpen: boolean;
@@ -10,10 +10,11 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
   const [location] = useLocation();
 
   const menuItems = [
-    { href: "/", label: "الحاسبة الرئيسية", icon: <IconCalculator size={24} /> },
+    { href: "/", label: "الحاسبة", icon: <IconCalculator size={24} /> },
+    { href: "/machines", label: "الماكينات", icon: <IconTool size={24} /> },
     { href: "/recipes", label: "الخلطات", icon: <IconFlask size={24} /> },
-    { href: "/materials", label: "الخامات والأسعار", icon: <IconPackage size={24} /> },
-    { href: "/history", label: "سجل الحسابات", icon: <IconHistory size={24} /> },
+    { href: "/materials", label: "الخامات", icon: <IconPackage size={24} /> },
+    { href: "/history", label: "السجل", icon: <IconHistory size={24} /> },
     { href: "/settings", label: "الإعدادات", icon: <IconSettings size={24} /> },
   ];
 

@@ -9,8 +9,10 @@ import CalculatorPage from "@/pages/calculator";
 import RecipesPage from "@/pages/recipes";
 import MaterialsPage from "@/pages/materials";
 import HistoryPage from "@/pages/history";
+import MachinesPage from "@/pages/machines";
 import { SideMenu } from "@/components/SideMenu";
 import { initStorage } from "@/lib/storage";
+import { initStorage as initStorageV3 } from "@/lib/v3/storage";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +25,7 @@ function Router() {
       <Route path="/" component={CalculatorPage} />
       <Route path="/recipes" component={RecipesPage} />
       <Route path="/materials" component={MaterialsPage} />
+      <Route path="/machines" component={MachinesPage} />
       <Route path="/history" component={HistoryPage} />
       <Route component={NotFound} />
     </Switch>
@@ -34,6 +37,7 @@ function App() {
 
   useEffect(() => {
     initStorage();
+    initStorageV3();
   }, []);
 
   return (
